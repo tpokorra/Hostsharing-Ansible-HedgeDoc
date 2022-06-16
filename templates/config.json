@@ -1,0 +1,32 @@
+{
+    "production": {
+        "domain": "{{domain}}",
+        "loglevel": "info",
+        "hsts": {
+            "enable": true,
+            "maxAgeSeconds": 31536000,
+            "includeSubdomains": true,
+            "preload": true
+        },
+        "csp": {
+            "enable": true,
+            "directives": {
+            },
+            "upgradeInsecureRequests": "auto",
+            "addDefaults": true,
+            "addDisqus": false,
+            "addGoogleAnalytics": false
+        },
+        "db": {
+            "username": "{{pac}}_{{user}}",
+            "password": "{{password}}",
+            "database": "{{pac}}_{{user}}",
+            "host": "localhost",
+            "port": "5432",
+            "dialect": "postgres"
+        },
+        "protocolUseSSL": true,
+        "allowPDFExport": true,
+        "linkifyHeaderStyle": "gfm"
+    }
+}

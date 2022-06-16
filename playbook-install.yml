@@ -47,23 +47,101 @@
   ##################################
   ## install hedgedoc
   ##################################
+  - name: Check for git working tree
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    stat:
+      path: /home/pacs/{{pac}}/users/{{user}}/hedgedoc
+    register: workingtree
+  - name: get repo
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    git:
+      repo: https://github.com/hedgedoc/hedgedoc.git
+      dest: /home/pacs/{{pac}}/users/{{user}}/hedgedoc
+      version: "{{hedgedoc_release}}"
+    when: not workingtree.stat.exists
 
-  # TODO
+  ##################################
+  ## install required packages
+  ##################################
+
+  - name: run setup script
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    shell: |
+      source ~/.profile
+      ./bin/setup || exit -1
+      yarn install --frozen-lockfile || exit -1
+      yarn build || exit -1
+      touch /home/pacs/{{pac}}/users/{{user}}/.ansible_bin_setup
+    args:
+      executable: /bin/bash
+      chdir: "/home/pacs/{{pac}}/users/{{user}}/hedgedoc"
+      creates: "/home/pacs/{{pac}}/users/{{user}}/.ansible_bin_setup"
 
   ##################################
   ## configuration
   ##################################
-
-  # TODO
-
-  ######################
-  ## initialise instance
-  ######################
-
-  # TODO
+  - name: upload configuration file
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    template:
+      src: "templates/config.json"
+      dest: "/home/pacs/{{pac}}/users/{{user}}/hedgedoc/config.json"
 
   ########################
   ## setup the apache site
   ########################
+  - name: check for htdocs-ssl directory
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    stat:
+      path: "/home/pacs/{{pac}}/users/{{user}}/doms/{{domain}}/htdocs-ssl"
+    register: htdocs_exists
 
-  # TODO
+  - name: drop htdocs-ssl directory
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    file:
+      path: "/home/pacs/{{pac}}/users/{{user}}/doms/{{domain}}/htdocs-ssl"
+      state: absent
+    when: htdocs_exists.stat.islnk is defined and htdocs_exists.stat.islnk == False
+
+  - name: create symbolic link for htdocs-ssl
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    file:
+      src: "/home/pacs/{{pac}}/users/{{user}}/hedgedoc/public"
+      dest: "/home/pacs/{{pac}}/users/{{user}}/doms/{{domain}}/htdocs-ssl"
+      state: link
+
+  - name: check for app-ssl directory
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    stat:
+      path: "/home/pacs/{{pac}}/users/{{user}}/doms/{{domain}}/app-ssl"
+    register: app_exists
+
+  - name: drop app-ssl directory
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    file:
+      path: "/home/pacs/{{pac}}/users/{{user}}/doms/{{domain}}/app-ssl"
+      state: absent
+    when: app_exists.stat.islnk is defined and app_exists.stat.islnk == False
+
+  - name: create symbolic link for app-ssl
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    file:
+      src: "/home/pacs/{{pac}}/users/{{user}}/hedgedoc"
+      dest: "/home/pacs/{{pac}}/users/{{user}}/doms/{{domain}}/app-ssl"
+      state: link
+
+  - name: upload domain htaccess file
+    become: yes
+    become_user: "{{pac}}-{{user}}"
+    template:
+      src: "templates/domain_htaccess"
+      dest: "/home/pacs/{{pac}}/users/{{user}}/doms/{{domain}}/.htaccess"

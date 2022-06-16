@@ -1,0 +1,2 @@
+PassengerNodejs /home/pacs/{{pac}}/users/{{user}}/.nvm/versions/node/{{nodeversion}}/bin/node
+PassengerFriendlyErrorPages Off
